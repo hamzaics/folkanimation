@@ -42,19 +42,32 @@
       align-items: center;
       position: relative;
       z-index: 2;
-      overflow: hidden;
     }
 
-    #logo-canvas {
-      max-width: 400px;
-      width: 100%;
-      height: auto;
+    .logo {
       opacity: 0;
-      transition: opacity 0.5s ease;
+      filter: blur(20px);
+      transform: perspective(1000px) rotateY(0deg) rotateX(0deg);
+      transition: all 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+      max-width: 400px;
     }
 
-    #logo-canvas.revealed {
+    .logo.revealed {
       opacity: 1;
+      filter: blur(0px);
+      transform: perspective(1000px) rotateY(0deg) rotateX(0deg);
+    }
+
+    .logo.flip-horizontal {
+      transform: perspective(1000px) rotateY(180deg) rotateX(0deg);
+    }
+
+    .logo.flip-vertical {
+      transform: perspective(1000px) rotateY(180deg) rotateX(180deg);
+    }
+
+    .logo.final {
+      transform: perspective(1000px) rotateY(0deg) rotateX(0deg);
     }
 
     .main {
@@ -100,7 +113,7 @@
       .main h1 {
         font-size: 3rem;
       }
-      #logo-canvas {
+      .logo {
         max-width: 250px;
       }
       .main .static-logo {
@@ -129,7 +142,7 @@
 
   <div class="wrapper" id="wrapper">
     <div class="intro">
-      <canvas id="logo-canvas"></canvas>
+      <img src="logo.png" alt="Logo" class="logo" id="logo" />
     </div>
     <div class="main">
       <video autoplay muted loop playsinline>
@@ -140,98 +153,45 @@
     </div>
   </div>
 
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script>
     window.addEventListener("load", () => {
-      const canvas = document.getElementById("logo-canvas");
+      const logo = document.getElementById("logo");
       const wrapper = document.getElementById("wrapper");
 
-      // Set up Three.js scene
-      const scene = new THREE.Scene();
-      const camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
-      const renderer = new THREE.WebGLRenderer({ canvas, alpha: true });
-      renderer.setSize(400, 400);
-      camera.position.z = 2;
-
-      // Load logo texture
-      const textureLoader = new THREE.TextureLoader();
-      const logoTexture = textureLoader.load("logo.png");
-
-      // Custom shader material
-      const vertexShader = `
-        varying vec2 vUv;
-        uniform float uTime;
-        void main() {
-          vUv = uv;
-          vec3 pos = position;
-          pos.z += sin(pos.x * 2.0 + uTime) * 0.1;
-          pos.x += cos(pos.y * 2.0 + uTime) * 0.05;
-          gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
-        }
-      `;
-
-      const fragmentShader = `
-        varying vec2 vUv;
-        uniform sampler2D uTexture;
-        uniform float uTime;
-        void main() {
-          vec2 uv = vUv;
-          uv.x += sin(uv.y * 5.0 + uTime) * 0.02;
-          vec4 color = texture2D(uTexture, uv);
-          gl_FragColor = color;
-        }
-      `;
-
-      const material = new THREE.ShaderMaterial({
-        uniforms: {
-          uTexture: { value: logoTexture },
-          uTime: { value: 0 }
-        },
-        vertexShader,
-        fragmentShader,
-        transparent: true
-      });
-
-      // Create plane geometry for logo
-      const geometry = new THREE.PlaneGeometry(1, 1);
-      const logoMesh = new THREE.Mesh(geometry, material);
-      scene.add(logoMesh);
-
-      // Animation parameters
-      let scale = 0.2;
-      let targetScale = 1.5;
-      const animate = () => {
-        material.uniforms.uTime.value += 0.05;
-        logoMesh.scale.set(scale, scale, 1);
-        logoMesh.rotation.z = Math.sin(material.uniforms.uTime.value * 0.2) * 0.1;
-
-        if (scale < targetScale) {
-          scale += (targetScale - scale) * 0.05;
-        } else if (targetScale === 1.5 && scale >= 1.5) {
-          targetScale = 1.0;
-        }
-
-        renderer.render(scene, camera);
-        requestAnimationFrame(animate);
-      };
-
-      // Reveal animation
+      // Reveal logo from blur
       setTimeout(() => {
-        canvas.classList.add("revealed");
-        animate();
+        logo.classList.add("revealed");
       }, 100);
+
+      // Flip horizontally
+      setTimeout(() => {
+        logo.classList.remove("revealed");
+        logo.classList.add("flip-horizontal");
+      }, 900);
+
+      // Flip vertically
+      setTimeout(() => {
+        logo.classList.remove("flip-horizontal");
+        logo.classList.add("flip-vertical");
+      }, 1700);
+
+      // Return to normal position
+      setTimeout(() => {
+        logo.classList.remove("flip-vertical");
+        logo.classList.add("final");
+      }, 2500);
 
       // Move container up after animation
       setTimeout(() => {
         wrapper.style.transform = "translateY(-100vh)";
-      }, 2400);
+      }, 3300);
     });
 
     // Custom Cursor Movement
     const cursor = document.getElementById("custom-cursor");
     let mouseX = 0, mouseY = 0;
     let currentX = 0, currentY = 0;
-    const speed = 0.55;
+    const speed = 0.55; // Lower is slower
 
     document.addEventListener("mousemove", (e) => {
       mouseX = e.clientX;
