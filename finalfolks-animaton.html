@@ -45,16 +45,48 @@
       overflow: hidden;
     }
 
+    .logo-container {
+      position: relative;
+      max-width: 400px;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      overflow: hidden;
+    }
+
     .logo {
       opacity: 0;
-      max-width: 400px;
+      width: 100%;
+      position: absolute;
       transition: opacity 0.5s ease;
-      position: relative;
       z-index: 2;
     }
 
     .logo.revealed {
       opacity: 1;
+    }
+
+    .logo-segment {
+      position: absolute;
+      width: 100%;
+      height: 33.33%;
+      overflow: hidden;
+      opacity: 0;
+      transform: translateY(100%);
+      transition: all 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    }
+
+    .logo-segment.revealed {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .logo-segment img {
+      width: 100%;
+      position: absolute;
+      top: 0;
     }
 
     .particle-container {
@@ -68,10 +100,9 @@
 
     .particle {
       position: absolute;
-      width: 6px;
-      height: 6px;
-      background: rgba(255, 255, 255, 0.8);
-      border-radius: 50%;
+      width: 20px;
+      height: 20px;
+      background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="rgba(255,255,255,0.8)"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm-4-8c0-2.21 1.79-4 4-4s4 1.79 4 4-1.79 4-4 4-4-1.79-4-4zm4-2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg>') no-repeat center center / contain;
       box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
       transition: all 1.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
     }
@@ -134,7 +165,7 @@
       .main h1 {
         font-size: 3rem;
       }
-      .logo {
+      .logo-container {
         max-width: 250px;
       }
       .main .static-logo {
@@ -165,7 +196,11 @@
     <div class="intro">
       <div class="particle-container" id="particle-container"></div>
       <div class="glow-overlay" id="glow-overlay"></div>
-      <img src="logo.png" alt="Logo" class="logo" id="logo" />
+      <div class="logo-container">
+        <div class="logo-segment" id="segment-1"><img src="logo.png" alt="Logo Segment 1"></div>
+        <div class="logo-segment" id="segment-2"><img src="logo.png" alt="Logo Segment 2" style="top: -33.33%;"></div>
+        <div class="logo-segment" id="segment-3"><img src="logo.png" alt="Logo Segment 3" style="top: -66.66%;"></div>
+      </div>
     </div>
     <div class="main">
       <video autoplay muted loop playsinline>
@@ -178,12 +213,16 @@
 
   <script>
     window.addEventListener("load", () => {
-      const logo = document.getElementById("logo");
       const wrapper = document.getElementById("wrapper");
       const particleContainer = document.getElementById("particle-container");
       const glowOverlay = document.getElementById("glow-overlay");
+      const segments = [
+        document.getElementById("segment-1"),
+        document.getElementById("segment-2"),
+        document.getElementById("segment-3")
+      ];
 
-      // Create particles
+      // Create butterfly particles
       const particles = [];
       const particleCount = 50;
 
@@ -199,15 +238,23 @@
         particle.style.transform = `translate(${startX}px, ${startY}px) scale(0)`;
       }
 
-      // Animate particles to form logo
+      // Animate particles and logo segments
       setTimeout(() => {
-        logo.classList.add("revealed");
         glowOverlay.classList.add("active");
 
+        // Reveal logo segments with staggered effect
+        segments.forEach((segment, index) => {
+          setTimeout(() => {
+            segment.classList.add("revealed");
+          }, index * 200);
+        });
+
+        // Animate butterfly particles to form logo
         particles.forEach((particle, index) => {
           setTimeout(() => {
             // Target position near logo center
-            const logoRect = logo.getBoundingClientRect();
+            const logoContainer = document.querySelector(".logo-container");
+            const logoRect = logoContainer.getBoundingClientRect();
             const targetX = logoRect.left + logoRect.width / 2 + (Math.random() - 0.5) * 100;
             const targetY = logoRect.top + logoRect.height / 2 + (Math.random() - 0.5) * 100;
             particle.style.transform = `translate(${targetX}px, ${targetY}px) scale(1)`;
