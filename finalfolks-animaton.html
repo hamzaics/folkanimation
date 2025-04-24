@@ -42,32 +42,33 @@
       align-items: center;
       position: relative;
       z-index: 2;
+      perspective: 1000px;
     }
 
     .logo {
       opacity: 0;
       filter: blur(20px);
-      transform: perspective(1000px) rotateY(0deg) rotateX(0deg);
-      transition: all 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+      transform: rotateY(0deg) rotateX(0deg);
       max-width: 400px;
+      transition: all 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55);
     }
 
     .logo.revealed {
       opacity: 1;
       filter: blur(0px);
-      transform: perspective(1000px) rotateY(0deg) rotateX(0deg);
+      transform: rotateY(0deg) rotateX(0deg);
     }
 
     .logo.flip-horizontal {
-      transform: perspective(1000px) rotateY(180deg) rotateX(0deg);
+      transform: rotateY(180deg) rotateX(0deg);
     }
 
     .logo.flip-vertical {
-      transform: perspective(1000px) rotateY(180deg) rotateX(180deg);
+      transform: rotateY(180deg) rotateX(180deg);
     }
 
     .logo.final {
-      transform: perspective(1000px) rotateY(0deg) rotateX(0deg);
+      transform: rotateY(0deg) rotateX(0deg);
     }
 
     .main {
@@ -165,7 +166,6 @@
 
       // Flip horizontally
       setTimeout(() => {
-        logo.classList.remove("revealed");
         logo.classList.add("flip-horizontal");
       }, 900);
 
