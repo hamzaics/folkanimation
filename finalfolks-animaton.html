@@ -45,80 +45,15 @@
       overflow: hidden;
     }
 
-    .logo-container {
-      position: relative;
+    #logo-canvas {
       max-width: 400px;
       width: 100%;
-      height: 100%;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      overflow: hidden;
-    }
-
-    .logo {
+      height: auto;
       opacity: 0;
-      width: 100%;
-      position: absolute;
       transition: opacity 0.5s ease;
-      z-index: 2;
     }
 
-    .logo.revealed {
-      opacity: 1;
-    }
-
-    .logo-segment {
-      position: absolute;
-      width: 100%;
-      height: 33.33%;
-      overflow: hidden;
-      opacity: 0;
-      transform: translateY(100%);
-      transition: all 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-    }
-
-    .logo-segment.revealed {
-      opacity: 1;
-      transform: translateY(0);
-    }
-
-    .logo-segment img {
-      width: 100%;
-      position: absolute;
-      top: 0;
-    }
-
-    .particle-container {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      z-index: 1;
-    }
-
-    .particle {
-      position: absolute;
-      width: 20px;
-      height: 20px;
-      background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="rgba(255,255,255,0.8)"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm-4-8c0-2.21 1.79-4 4-4s4 1.79 4 4-1.79 4-4 4-4-1.79-4-4zm4-2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg>') no-repeat center center / contain;
-      box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
-      transition: all 1.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-    }
-
-    .glow-overlay {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: radial-gradient(circle, rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0) 70%);
-      opacity: 0;
-      transition: opacity 1s ease;
-    }
-
-    .glow-overlay.active {
+    #logo-canvas.revealed {
       opacity: 1;
     }
 
@@ -165,7 +100,7 @@
       .main h1 {
         font-size: 3rem;
       }
-      .logo-container {
+      #logo-canvas {
         max-width: 250px;
       }
       .main .static-logo {
@@ -194,13 +129,7 @@
 
   <div class="wrapper" id="wrapper">
     <div class="intro">
-      <div class="particle-container" id="particle-container"></div>
-      <div class="glow-overlay" id="glow-overlay"></div>
-      <div class="logo-container">
-        <div class="logo-segment" id="segment-1"><img src="logo.png" alt="Logo Segment 1"></div>
-        <div class="logo-segment" id="segment-2"><img src="logo.png" alt="Logo Segment 2" style="top: -33.33%;"></div>
-        <div class="logo-segment" id="segment-3"><img src="logo.png" alt="Logo Segment 3" style="top: -66.66%;"></div>
-      </div>
+      <canvas id="logo-canvas"></canvas>
     </div>
     <div class="main">
       <video autoplay muted loop playsinline>
@@ -211,76 +140,98 @@
     </div>
   </div>
 
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script>
     window.addEventListener("load", () => {
+      const canvas = document.getElementById("logo-canvas");
       const wrapper = document.getElementById("wrapper");
-      const particleContainer = document.getElementById("particle-container");
-      const glowOverlay = document.getElementById("glow-overlay");
-      const segments = [
-        document.getElementById("segment-1"),
-        document.getElementById("segment-2"),
-        document.getElementById("segment-3")
-      ];
 
-      // Create butterfly particles
-      const particles = [];
-      const particleCount = 50;
+      // Set up Three.js scene
+      const scene = new THREE.Scene();
+      const camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
+      const renderer = new THREE.WebGLRenderer({ canvas, alpha: true });
+      renderer.setSize(400, 400);
+      camera.position.z = 2;
 
-      for (let i = 0; i < particleCount; i++) {
-        const particle = document.createElement("div");
-        particle.classList.add("particle");
-        particleContainer.appendChild(particle);
-        particles.push(particle);
+      // Load logo texture
+      const textureLoader = new THREE.TextureLoader();
+      const logoTexture = textureLoader.load("logo.png");
 
-        // Initial random position
-        const startX = Math.random() * window.innerWidth;
-        const startY = Math.random() * window.innerHeight;
-        particle.style.transform = `translate(${startX}px, ${startY}px) scale(0)`;
-      }
+      // Custom shader material
+      const vertexShader = `
+        varying vec2 vUv;
+        uniform float uTime;
+        void main() {
+          vUv = uv;
+          vec3 pos = position;
+          pos.z += sin(pos.x * 2.0 + uTime) * 0.1;
+          pos.x += cos(pos.y * 2.0 + uTime) * 0.05;
+          gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
+        }
+      `;
 
-      // Animate particles and logo segments
+      const fragmentShader = `
+        varying vec2 vUv;
+        uniform sampler2D uTexture;
+        uniform float uTime;
+        void main() {
+          vec2 uv = vUv;
+          uv.x += sin(uv.y * 5.0 + uTime) * 0.02;
+          vec4 color = texture2D(uTexture, uv);
+          gl_FragColor = color;
+        }
+      `;
+
+      const material = new THREE.ShaderMaterial({
+        uniforms: {
+          uTexture: { value: logoTexture },
+          uTime: { value: 0 }
+        },
+        vertexShader,
+        fragmentShader,
+        transparent: true
+      });
+
+      // Create plane geometry for logo
+      const geometry = new THREE.PlaneGeometry(1, 1);
+      const logoMesh = new THREE.Mesh(geometry, material);
+      scene.add(logoMesh);
+
+      // Animation parameters
+      let scale = 0.2;
+      let targetScale = 1.5;
+      const animate = () => {
+        material.uniforms.uTime.value += 0.05;
+        logoMesh.scale.set(scale, scale, 1);
+        logoMesh.rotation.z = Math.sin(material.uniforms.uTime.value * 0.2) * 0.1;
+
+        if (scale < targetScale) {
+          scale += (targetScale - scale) * 0.05;
+        } else if (targetScale === 1.5 && scale >= 1.5) {
+          targetScale = 1.0;
+        }
+
+        renderer.render(scene, camera);
+        requestAnimationFrame(animate);
+      };
+
+      // Reveal animation
       setTimeout(() => {
-        glowOverlay.classList.add("active");
-
-        // Reveal logo segments with staggered effect
-        segments.forEach((segment, index) => {
-          setTimeout(() => {
-            segment.classList.add("revealed");
-          }, index * 200);
-        });
-
-        // Animate butterfly particles to form logo
-        particles.forEach((particle, index) => {
-          setTimeout(() => {
-            // Target position near logo center
-            const logoContainer = document.querySelector(".logo-container");
-            const logoRect = logoContainer.getBoundingClientRect();
-            const targetX = logoRect.left + logoRect.width / 2 + (Math.random() - 0.5) * 100;
-            const targetY = logoRect.top + logoRect.height / 2 + (Math.random() - 0.5) * 100;
-            particle.style.transform = `translate(${targetX}px, ${targetY}px) scale(1)`;
-          }, index * 20);
-        });
+        canvas.classList.add("revealed");
+        animate();
       }, 100);
-
-      // Fade out particles and glow
-      setTimeout(() => {
-        particles.forEach((particle) => {
-          particle.style.opacity = 0;
-        });
-        glowOverlay.style.opacity = 0;
-      }, 1200);
 
       // Move container up after animation
       setTimeout(() => {
         wrapper.style.transform = "translateY(-100vh)";
-      }, 2000);
+      }, 2400);
     });
 
     // Custom Cursor Movement
     const cursor = document.getElementById("custom-cursor");
     let mouseX = 0, mouseY = 0;
     let currentX = 0, currentY = 0;
-    const speed = 0.55; // Lower is slower
+    const speed = 0.55;
 
     document.addEventListener("mousemove", (e) => {
       mouseX = e.clientX;
