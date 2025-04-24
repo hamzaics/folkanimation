@@ -20,123 +20,111 @@
     html, body {
       height: 100%;
       font-family: 'Motter Corpus Std', sans-serif;
-      background: black;
       overflow: hidden;
+      background: black;
     }
 
     .wrapper {
-      position: relative;
-      height: 200vh;
+      height: 100vh;
       width: 100%;
-      transition: transform 1s cubic-bezier(0.77, 0, 0.175, 1);
     }
 
     .intro {
       height: 100vh;
       width: 100%;
-      background: #1b4736;
+      background: #0f0f0f;
       display: flex;
       justify-content: center;
       align-items: center;
-      position: relative;
-      z-index: 2;
-      overflow: hidden;
+      position: absolute;
+      inset: 0;
+      z-index: 10;
+      transition: clip-path 1.2s ease-in-out;
+      clip-path: circle(100% at 50% 50%);
     }
 
-    .logo-wrapper {
-      position: relative;
-      width: 300px;
-      height: 300px;
-      clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
-      animation: morph 2s ease-in-out forwards;
+    .intro.hide {
+      clip-path: circle(0% at 50% 50%);
     }
 
-    @keyframes morph {
+    .logo {
+      width: 180px;
+      animation: logoEnter 1.8s ease-out forwards;
+      opacity: 0;
+      transform: scale(0.6) rotateX(80deg);
+      filter: drop-shadow(0 0 20px #00ffab);
+    }
+
+    @keyframes logoEnter {
       0% {
-        clip-path: polygon(50% 0%, 50% 0%, 50% 100%, 50% 100%);
+        opacity: 0;
+        transform: scale(0.6) rotateX(80deg);
+        filter: drop-shadow(0 0 0px #00ffab);
+      }
+      50% {
+        opacity: 1;
+        transform: scale(1.2) rotateX(0deg);
+        filter: drop-shadow(0 0 40px #00ffab);
       }
       100% {
-        clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
+        opacity: 1;
+        transform: scale(1) rotateX(0deg);
+        filter: drop-shadow(0 0 10px #00ffab);
       }
-    }
-
-    .logo-wrapper img {
-      width: 100%;
-      height: 100%;
-      object-fit: contain;
-      animation: shine 2s ease-in-out forwards;
-      position: relative;
-      z-index: 2;
-    }
-
-    .logo-wrapper::after {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: -100%;
-      width: 100%;
-      height: 100%;
-      background: linear-gradient(120deg, transparent, rgba(255,255,255,0.3), transparent);
-      animation: shineMove 2s ease-in-out forwards;
-      z-index: 3;
-    }
-
-    @keyframes shineMove {
-      0% { left: -100%; }
-      100% { left: 100%; }
     }
 
     .main {
       height: 100vh;
       width: 100%;
-      position: relative;
-      overflow: hidden;
+      background-color: #1e1e1e;
       display: flex;
+      flex-direction: column;
       justify-content: center;
       align-items: center;
-      background-color: #905120;
-    }
-
-    .main .static-logo {
-      width: 200px;
-      position: absolute;
-      top: 40px;
-      left: 50px;
+      position: relative;
+      z-index: 1;
     }
 
     .main video {
       position: absolute;
       top: 0;
       left: 0;
-      min-width: 100%;
-      min-height: 100%;
+      width: 100%;
+      height: 100%;
       object-fit: cover;
-      opacity: 0.5;
+      z-index: 0;
+      opacity: 0.25;
+    }
+
+    .main .static-logo {
+      width: 120px;
+      margin-bottom: 30px;
+      position: relative;
+      z-index: 1;
     }
 
     .main h1 {
-      position: relative;
-      z-index: 1;
       color: white;
-      font-size: 7rem;
+      font-size: 5rem;
+      z-index: 1;
       text-align: center;
       text-transform: uppercase;
     }
 
-    @media(max-width: 600px) {
+    @media (max-width: 600px) {
+      .logo {
+        width: 130px;
+      }
+
+      .main .static-logo {
+        width: 100px;
+      }
+
       .main h1 {
-        font-size: 3rem;
-      }
-      .static-logo {
-        width: 150px;
-      }
-      .logo-wrapper {
-        width: 200px;
-        height: 200px;
+        font-size: 2.5rem;
       }
     }
 
-    /* Custom Cursor */
     .custom-cursor {
       position: fixed;
       top: 0;
@@ -145,9 +133,9 @@
       height: 70px;
       background: url('cursor.svg') no-repeat center center / contain;
       pointer-events: none;
-      rotate: -15deg;
       z-index: 9999;
       transition: transform 0.1s ease;
+      rotate: -15deg;
     }
   </style>
 </head>
@@ -155,36 +143,32 @@
 
   <div class="custom-cursor" id="custom-cursor"></div>
 
-  <div class="wrapper" id="wrapper">
-    <div class="intro">
-      <div class="logo-wrapper" id="logoWrapper">
-        <img src="logo.png" alt="Logo" />
-      </div>
+  <div class="wrapper">
+    <div class="intro" id="intro">
+      <img src="logo.png" alt="Logo" class="logo" />
     </div>
     <div class="main">
       <video autoplay muted loop playsinline>
         <source src="https://videos.pexels.com/video-files/6837588/6837588-sd_960_506_25fps.mp4" type="video/mp4">
       </video>
-      <img class="static-logo" src="logo.png">
+      <img class="static-logo" src="logo.png" alt="Static Logo" />
       <h1>Launching<br>Soon</h1>
     </div>
   </div>
 
   <script>
+    // Intro animation logic
     window.addEventListener("load", () => {
-      const wrapper = document.getElementById("wrapper");
-
-      // Slide to main screen after animation
       setTimeout(() => {
-        wrapper.style.transform = "translateY(-100vh)";
-      }, 2500); // allow morph + shine to complete
+        document.getElementById("intro").classList.add("hide");
+      }, 2000);
     });
 
     // Custom Cursor
     const cursor = document.getElementById("custom-cursor");
     let mouseX = 0, mouseY = 0;
     let currentX = 0, currentY = 0;
-    const speed = 0.55;
+    const speed = 0.5;
 
     document.addEventListener("mousemove", (e) => {
       mouseX = e.clientX;
@@ -200,6 +184,5 @@
 
     animateCursor();
   </script>
-
 </body>
 </html>
